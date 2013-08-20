@@ -1,0 +1,867 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>wotkitpy &mdash; wotkitpy 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="wotkitpy 1.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">wotkitpy 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for wotkitpy</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;A Python client for communicating to the WoTKit API using the requests library.</span>
+
+<span class="sd">.. moduleauthor:: Mark Duppenthaler &lt;mduppes@gmail.com&gt;</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;main&quot;</span><span class="p">:</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">()</span>
+    
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+<span class="n">QUERY_MAX_SENSORS</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="n">REGISTER_MAX_SENSORS</span> <span class="o">=</span> <span class="mi">100</span>
+
+<span class="k">class</span> <span class="nc">WotkitException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">WotkitConfigException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">def</span> <span class="nf">_get_required_field</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns settings[field]. If it doesn&#39;t exist it raises an exception &quot;&quot;&quot;</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">WotkitConfigException</span><span class="p">(</span><span class="s">&quot;Missing required argument </span><span class="si">%s</span><span class="s">.&quot;</span> <span class="o">%</span> <span class="n">field</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">value</span>
+
+<div class="viewcode-block" id="get_wotkit_timestamp"><a class="viewcode-back" href="../index.html#wotkitpy.get_wotkit_timestamp">[docs]</a><span class="k">def</span> <span class="nf">get_wotkit_timestamp</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Returns the current timestamp in the format WoTKit recognizes.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="o">+</span> <span class="s">&quot;Z&quot;</span>
+</div>
+<span class="k">def</span> <span class="nf">_load_response_json</span><span class="p">(</span><span class="n">response</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Load a the JSON response into Python format.&quot;&quot;&quot;</span>    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="n">encoding</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">encoding</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Invalid JSON. Error: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+     
+<div class="viewcode-block" id="WotkitProxy"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy">[docs]</a><span class="k">class</span> <span class="nc">WotkitProxy</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Acts as a network proxy to the WotKit based on the configuration supplied.&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Configures the settings necessary for connecting to the WoTKit.</span>
+<span class="sd">        Kwargs:</span>
+<span class="sd">            :param api_url: The base url for the WoTKit API. </span>
+<span class="sd">            :type api_url: str. </span>
+<span class="sd">            :param username: The default username or key ID that will be used. (OPTIONAL)</span>
+<span class="sd">            :type username: str.</span>
+<span class="sd">            :param password: The default password or key password that will be used. (OPTIONAL)</span>
+<span class="sd">            :type password: str.</span>
+
+<span class="sd">        :raises: WotkitConfigException&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">=</span> <span class="n">_get_required_field</span><span class="p">(</span><span class="s">&quot;api_url&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;username&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;password&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">_get_login_credentials</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a (username, password) tuple. Uses the defaults supplied upon initialization if username or password are empty.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">username</span> <span class="ow">and</span> <span class="n">password</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="WotkitProxy.get_sensor_by_name"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.get_sensor_by_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_sensor_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_name</span><span class="p">,</span> <span class="n">username</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get a sensor by name.</span>
+<span class="sd">        :param sensor_name: Sensor name to get (no username component prepended, ie. if the full name is admin.sensor_name, use sensor_name).</span>
+<span class="sd">        :type sensor_name: str.</span>
+<span class="sd">        :param username: If provided with password, overrides the default login credentials supplied on initialization.</span>
+<span class="sd">        :type username: str.</span>
+<span class="sd">        :param password: Used in combination with username.</span>
+<span class="sd">        :type password: str.</span>
+<span class="sd">        :rtype: dict representing sensor data, or None if sensor does not exist. </span>
+<span class="sd">        :raises: WotkitException if a status code is not 200 or 404&#39;&#39;&#39;</span>
+        
+        <span class="n">user</span><span class="p">,</span> <span class="n">pwd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_sensor_by_id</span><span class="p">(</span><span class="n">user</span> <span class="o">+</span> <span class="s">&quot;.&quot;</span> <span class="o">+</span> <span class="n">sensor_name</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">pwd</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="WotkitProxy.get_sensor_by_id"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.get_sensor_by_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_sensor_by_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_id</span><span class="p">,</span> <span class="n">username</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get a sensor by ID.</span>
+<span class="sd">        :param sensor_id: Sensor ID to get.</span>
+<span class="sd">        :type sensor_id: str.</span>
+<span class="sd">        :param username: If provided with password, overrides the default login credentials supplied on initialization.</span>
+<span class="sd">        :type username: str.</span>
+<span class="sd">        :param password: Used in combination with username.</span>
+<span class="sd">        :type password: str.</span>
+<span class="sd">        :rtype: dict representing sensor data, or None if sensor does not exist. </span>
+<span class="sd">        :raises: WotkitException if a status code is not 200 or 404&#39;&#39;&#39;</span>
+        
+        <span class="n">sensor_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sensor_id</span><span class="p">)</span>
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span><span class="o">+</span><span class="s">&#39;/sensors/&#39;</span><span class="o">+</span><span class="n">sensor_id</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">auth</span> <span class="o">=</span> <span class="n">auth_credentials</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in getting sensor &quot;</span> <span class="o">+</span> <span class="n">sensor_id</span> <span class="o">+</span> <span class="s">&quot;. Error: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Success getting sensor &quot;</span> <span class="o">+</span> <span class="n">sensor_id</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">_load_response_json</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">404</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Sensor doesn&#39;t exist &quot;</span> <span class="o">+</span> <span class="n">sensor_id</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in getting sensor &quot;</span> <span class="o">+</span> <span class="n">sensor_id</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Code: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Text: &quot;</span> <span class="o">+</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">encoding</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="WotkitProxy.query_all_sensors"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.query_all_sensors">[docs]</a>    <span class="k">def</span> <span class="nf">query_all_sensors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Searches all sensors that match the search query. A wrapper function on top of query_sensors that performs multiple API calls to retrieve all matches for search results more than 1000 sensors.</span>
+<span class="sd">        .. note:: When multiple API calls are made the search result could potentially be off sync with the WoTKit due to updates occuring to the sensors as the search is being performed.</span>
+<span class="sd">        kwargs (optional):</span>
+<span class="sd">            :param scope: &quot;all&quot;, &quot;subscribed&quot;, or &quot;contributed&quot;. &quot;all&quot; - all sensors the current user has access to. &quot;subscribed&quot; - the sensors the user has subscribed to. &quot;contributed&quot; - the sensors the user has contributed to the system.</span>
+<span class="sd">            :type scope: str.</span>
+<span class="sd">            :param tags: list of comma separated tags.</span>
+<span class="sd">            :type tags: str.</span>
+<span class="sd">            :param orgs: list of comma separated organization names.</span>
+<span class="sd">            :type orgs: str.</span>
+<span class="sd">            :param visibility: filter by the visibility of the sensors, either of &quot;public&quot;, &quot;organization&quot;, or &quot;private&quot;</span>
+<span class="sd">            :type visibility: str.</span>
+<span class="sd">            :param text: text to search for in the name, long name and description.</span>
+<span class="sd">            :type text: str.</span>
+<span class="sd">            :param active: when true, only returns sensors that have been updated in the last 15 minutes.</span>
+<span class="sd">            :type active: bool.</span>
+<span class="sd">            :param location: geo coordinates for a bounding box to search within. Format is yy.yyy,xx.xxx:yy.yyy,xx.xxx, and the order of the coordinates are North,West:South,East. Example: location=56.89,-114.55:17.43,-106.219.</span>
+<span class="sd">            :type location: str.</span>
+<span class="sd">            </span>
+<span class="sd">            :param username: If provided with password, overrides the default login credentials supplied on initialization.</span>
+<span class="sd">            :type username: str.</span>
+<span class="sd">            :param password: Used in combination with username.</span>
+<span class="sd">            :type password: str.</span>
+<span class="sd">            </span>
+<span class="sd">            :rtype: list of dict&#39;s containing each sensor&#39;s data. Empty list of no matches. </span>
+<span class="sd">            :raises: WotkitException if a status code is not 200&#39;s&quot;&quot;&quot;</span>
+        <span class="n">sensors</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&quot;offset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&quot;limit&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">QUERY_MAX_SENSORS</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">result_sensors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_sensors</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">result_sensors</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Searching.. found </span><span class="si">%d</span><span class="s"> sensors..&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">result_sensors</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">result_sensor</span> <span class="ow">in</span> <span class="n">result_sensors</span><span class="p">:</span>
+                <span class="n">sensors</span><span class="p">[</span><span class="n">result_sensor</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">result_sensor</span>
+            <span class="n">offset</span> <span class="o">+=</span> <span class="n">QUERY_MAX_SENSORS</span>
+        <span class="k">return</span> <span class="n">sensors</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="WotkitProxy.query_sensors"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.query_sensors">[docs]</a>    <span class="k">def</span> <span class="nf">query_sensors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Searches sensors that match the search query. </span>
+<span class="sd">        </span>
+<span class="sd">        kwargs: </span>
+<span class="sd">            :param scope: &quot;all&quot;, &quot;subscribed&quot;, or &quot;contributed&quot;. &quot;all&quot; - all sensors the current user has access to. &quot;subscribed&quot; - the sensors the user has subscribed to. &quot;contributed&quot; - the sensors the user has contributed to the system.</span>
+<span class="sd">            :type scope: str.</span>
+<span class="sd">            :param tags: list of comma separated tags.</span>
+<span class="sd">            :type tags: str.</span>
+<span class="sd">            :param orgs: list of comma separated organization names.</span>
+<span class="sd">            :type orgs: str.</span>
+<span class="sd">            :param visibility: filter by the visibility of the sensors, either of &quot;public&quot;, &quot;organization&quot;, or &quot;private&quot;</span>
+<span class="sd">            :type visibility: str.</span>
+<span class="sd">            :param text: text to search for in the name, long name and description.</span>
+<span class="sd">            :type text: str.</span>
+<span class="sd">            :param active: when true, only returns sensors that have been updated in the last 15 minutes.</span>
+<span class="sd">            :type active: bool.</span>
+<span class="sd">            :param location: geo coordinates for a bounding box to search within. Format is yy.yyy,xx.xxx:yy.yyy,xx.xxx, and the order of the coordinates are North,West:South,East. Example: location=56.89,-114.55:17.43,-106.219.</span>
+<span class="sd">            :type location: str.</span>
+<span class="sd">            </span>
+<span class="sd">            :param offset: offset into list of sensors for paging.</span>
+<span class="sd">            :type offset: int.</span>
+<span class="sd">            :param limit: limit to show for paging. The maximum number of sensors to display is 1000.</span>
+<span class="sd">            :type limit: int.</span>
+<span class="sd">            </span>
+<span class="sd">            :param username: If provided with password, overrides the default login credentials supplied on initialization.</span>
+<span class="sd">            :type username: str.</span>
+<span class="sd">            :param password: Used in combination with username.</span>
+<span class="sd">            :type password: str.</span>
+<span class="sd">            </span>
+<span class="sd">            :raises: WotkitException if a status code is not 200&#39;s&quot;&quot;&quot;</span>
+
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;username&quot;</span><span class="p">),</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;password&quot;</span><span class="p">))</span>
+        
+        <span class="n">valid_params</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s">&quot;scope&quot;</span><span class="p">,</span> <span class="s">&quot;tags&quot;</span><span class="p">,</span> <span class="s">&quot;orgs&quot;</span><span class="p">,</span> <span class="s">&quot;visibility&quot;</span><span class="p">,</span> <span class="s">&quot;text&quot;</span><span class="p">,</span> <span class="s">&quot;active&quot;</span><span class="p">,</span> <span class="s">&quot;location&quot;</span><span class="p">,</span> <span class="s">&quot;offset&quot;</span><span class="p">,</span> <span class="s">&quot;limit&quot;</span><span class="p">])</span>        
+        <span class="n">search_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">valid_params</span> <span class="p">])</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&quot;/sensors&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">search_params</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="n">auth_credentials</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in querying sensor. Params: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">search_params</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;, Error: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in querying sensor. Params: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">search_params</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Code: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Text: &quot;</span> <span class="o">+</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">encoding</span><span class="p">))</span>
+        
+        <span class="k">return</span> <span class="n">_load_response_json</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="WotkitProxy.register_sensor"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.register_sensor">[docs]</a>    <span class="k">def</span> <span class="nf">register_sensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">registration_dict</span><span class="p">,</span> <span class="n">username</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Registers a new sensor to the WoTKit. </span>
+<span class="sd">        </span>
+<span class="sd">        :param registration_dict: A Python dictionary that represents the JSON registration data. (ie. json.dumps(registration_dict) must not fail).  &quot;name&quot;, &quot;longName&quot;, and &quot;description&quot; are required. &quot;longitude&quot;, &quot;latitude&quot; are optional and will default to 0. &quot;visibility&quot; is optional and will default to &quot;public&quot;, if it is &quot;organization&quot; a valid &quot;organization&quot; must be supplied. &quot;tags&quot;, &quot;fields&quot;, &quot;organization&quot; are optional. The sensor name must be at least 4 characters long, contain only lowercase letters, numbers, dashes and underscores, and can start with a lowercase letter or an underscore only.  </span>
+<span class="sd">        :type registration_dict: dict. </span>
+<span class="sd">        </span>
+<span class="sd">        :param username: If provided with password, overrides the default login credentials supplied on initialization.</span>
+<span class="sd">        :type username: str.</span>
+<span class="sd">        :param password: Used in combination with username.</span>
+<span class="sd">        :type password: str.</span>
+<span class="sd">        :raises: WotkitException if a status code is not 200&#39;s&quot;&quot;&quot;</span>
+        
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">api_url</span><span class="o">+</span><span class="s">&#39;/sensors&#39;</span>
+        <span class="n">json_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">registration_dict</span><span class="p">)</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;content-type&quot;</span><span class="p">:</span> <span class="s">&quot;application/json&quot;</span><span class="p">}</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span> <span class="o">=</span> <span class="n">url</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="n">auth_credentials</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">json_data</span><span class="p">,</span> <span class="n">headers</span> <span class="o">=</span> <span class="n">headers</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in registering sensor to url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;. Registration Data: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">registration_dict</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;. Error: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Success registering sensor for sensor: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">registration_dict</span><span class="p">[</span><span class="s">&quot;name&quot;</span><span class="p">]))</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Error while registering sensor &#39;</span><span class="si">%s</span><span class="s">&#39; to url: </span><span class="si">%s</span><span class="s"> </span><span class="se">\n</span><span class="s">Resp: </span><span class="si">%s</span><span class="s">&quot;</span>
+            <span class="n">resp</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="n">msg</span> <span class="o">%</span> <span class="p">(</span><span class="n">registration_dict</span><span class="p">[</span><span class="s">&quot;name&quot;</span><span class="p">],</span> <span class="n">url</span><span class="p">,</span> <span class="n">resp</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="WotkitProxy.register_multiple_sensors"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.register_multiple_sensors">[docs]</a>    <span class="k">def</span> <span class="nf">register_multiple_sensors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">registration_list</span><span class="p">,</span> <span class="n">username</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Registers multiple new sensor to the WoTKit. If there are more than 100 sensor&#39;s in registration_list, performs multiple bulk registration requests to the WoTKit.</span>
+<span class="sd">        </span>
+<span class="sd">        :param registration_list: A Python list that represents the JSON registration data. (ie. json.dumps(registration_dict) must not fail). For more detail look at register_sensor since the registration_list is just a list of single registration_dict&#39;s. </span>
+<span class="sd">        :type registration_list: list of dict </span>
+<span class="sd">        </span>
+<span class="sd">        :param username: If provided with password, overrides the default login credentials supplied on initialization.</span>
+<span class="sd">        :type username: str.</span>
+<span class="sd">        :param password: Used in combination with username.</span>
+<span class="sd">        :type password: str.</span>
+<span class="sd">        :raises: WotkitException if a status code is not 200&#39;s&quot;&quot;&quot;</span>
+        
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">api_url</span><span class="o">+</span><span class="s">&#39;/sensors&#39;</span>
+
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;content-type&quot;</span><span class="p">:</span> <span class="s">&quot;application/json&quot;</span><span class="p">}</span>
+        
+        <span class="k">for</span> <span class="n">registration_chunk</span> <span class="ow">in</span> <span class="p">[</span> <span class="n">registration_list</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="n">REGISTER_MAX_SENSORS</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">registration_list</span><span class="p">),</span> <span class="n">REGISTER_MAX_SENSORS</span><span class="p">)</span> <span class="p">]:</span>
+            <span class="n">json_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">registration_chunk</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">url</span> <span class="o">=</span> <span class="n">url</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="n">auth_credentials</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">json_data</span><span class="p">,</span> <span class="n">headers</span> <span class="o">=</span> <span class="n">headers</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in registering multiple sensors to url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;. Registration Chunk: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">registration_chunk</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;. Error: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">400</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in registering multiple sensors to url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;. Registration Chunk: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">registration_chunk</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;. Error: Sensor is Invalid. Response: &quot;</span> <span class="o">+</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">409</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in registering multiple sensors to url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;. Registration Chunk: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">registration_chunk</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;. Error: Sensor already exists. Response: &quot;</span> <span class="o">+</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in registering multiple sensors to url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;. Registration Chunk: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">registration_chunk</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;. Code: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;. Response: &quot;</span> <span class="o">+</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+                
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Success registering multiple sensors to url: &quot;</span> <span class="o">+</span> <span class="n">url</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">True</span>
+        </div>
+<div class="viewcode-block" id="WotkitProxy.update_sensor"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.update_sensor">[docs]</a>    <span class="k">def</span> <span class="nf">update_sensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_id</span><span class="p">,</span> <span class="n">update_dict</span><span class="p">,</span> <span class="n">username</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates a sensor on the WoTKit. </span>
+
+<span class="sd">        :param sensor_id: Sensor ID to update.</span>
+<span class="sd">        :type sensor_id: str.</span>
+<span class="sd">        :param update_dict: A Python dictionary that represents the JSON update data. (ie. json.dumps(update_dict) must not fail). Look at registration for more details. Updating a sensor is the same as registering a new sensor other than PUT is used and the sensor name or id is included in the URL. </span>
+<span class="sd">        :type update_dict: dict. </span>
+<span class="sd">        </span>
+<span class="sd">        :param username: If provided with password, overrides the default login credentials supplied on initialization.</span>
+<span class="sd">        :type username: str.</span>
+<span class="sd">        :param password: Used in combination with username.</span>
+<span class="sd">        :type password: str.</span>
+<span class="sd">        :raises: WotkitException if a status code is not 200&#39;s&quot;&quot;&quot;</span>
+        
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        <span class="n">sensor_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sensor_id</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&quot;/sensors/&quot;</span> <span class="o">+</span> <span class="n">sensor_id</span>
+        <span class="n">json_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">sensor_data</span><span class="p">)</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;content-type&quot;</span><span class="p">:</span> <span class="s">&quot;application/json&quot;</span><span class="p">}</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">url</span> <span class="o">=</span> <span class="n">url</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="n">auth_credentials</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">json_data</span><span class="p">,</span> <span class="n">headers</span> <span class="o">=</span> <span class="n">headers</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in updating sensor to url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;. Update Data: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">update_dict</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;. Error: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Success updating sensor schema for url &quot;</span> <span class="o">+</span> <span class="n">url</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error while updating sensor </span><span class="si">%s</span><span class="s"> to url: </span><span class="si">%s</span><span class="s">  &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sensor_id</span><span class="p">,</span> <span class="n">url</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="WotkitProxy.delete_sensor"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.delete_sensor">[docs]</a>    <span class="k">def</span> <span class="nf">delete_sensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_id</span><span class="p">,</span> <span class="n">username</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Delete sensor from WoTKit.</span>
+<span class="sd">        </span>
+<span class="sd">        :param sensor_id: Sensor ID to delete.</span>
+<span class="sd">        :type sensor_id: str.</span>
+<span class="sd">        </span>
+<span class="sd">        :param username: If provided with password, overrides the default login credentials supplied on initialization.</span>
+<span class="sd">        :type username: str.</span>
+<span class="sd">        :param password: Used in combination with username.</span>
+<span class="sd">        :type password: str.</span>
+<span class="sd">        :raises: WotkitException if a status code is not 204&quot;&quot;&quot;</span>
+        
+        <span class="n">sensor_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sensor_id</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&quot;/sensors/&quot;</span> <span class="o">+</span> <span class="n">sensor_id</span>
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">delete_response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">auth</span> <span class="o">=</span> <span class="n">auth_credentials</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in deleting sensor at url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;. Error: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span> 
+        
+        <span class="k">if</span> <span class="n">delete_response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Deleted sensor </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">sensor_id</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Failed to delete sensor </span><span class="si">%s</span><span class="s">: code: </span><span class="si">%d</span><span class="s">. Message: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sensor_id</span><span class="p">,</span> <span class="n">delete_response</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span> <span class="n">delete_response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">delete_response</span><span class="o">.</span><span class="n">encoding</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="WotkitProxy.get_sensor_subscriptions"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.get_sensor_subscriptions">[docs]</a>    <span class="k">def</span> <span class="nf">get_sensor_subscriptions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;View sensors that user is subscribed to.</span>
+<span class="sd">        </span>
+<span class="sd">        :param username: If provided with password, overrides the default login credentials supplied on initialization.</span>
+<span class="sd">        :type username: str.</span>
+<span class="sd">        :param password: Used in combination with username.</span>
+<span class="sd">        :type password: str.</span>
+<span class="sd">        :raises: WotkitException if a status code is not 200&#39;s</span>
+<span class="sd">        :rtype: list of sensors subscribed&quot;&quot;&quot;</span>
+        
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&quot;/subscribe&quot;</span>
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">auth</span> <span class="o">=</span> <span class="n">auth_credentials</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in getting sensor subscriptions at url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;. Error: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_load_response_json</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in getting subscriptions</span><span class="se">\n</span><span class="s"> Response Code: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Text: &quot;</span> <span class="o">+</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">encoding</span><span class="p">))</span>
+        </div>
+<div class="viewcode-block" id="WotkitProxy.subscribe_sensor"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.subscribe_sensor">[docs]</a>    <span class="k">def</span> <span class="nf">subscribe_sensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_id</span><span class="p">,</span> <span class="n">username</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Subscribe to sensor for user.</span>
+
+<span class="sd">        :param sensor_id: Sensor ID to subscribe.</span>
+<span class="sd">        :type sensor_id: str.</span>
+<span class="sd">        :param username: If provided with password, overrides the default login credentials supplied on initialization.</span>
+<span class="sd">        :type username: str.</span>
+<span class="sd">        :param password: Used in combination with username.</span>
+<span class="sd">        :type password: str.</span>
+<span class="sd">        :raises: WotkitException if a status code is not 200&#39;s&quot;&quot;&quot;</span>
+        
+        <span class="n">sensor_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sensor_id</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&quot;/subscribe/&quot;</span> <span class="o">+</span> <span class="n">sensor_id</span>
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">auth</span> <span class="o">=</span> <span class="n">auth_credentials</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in sensor subscribe at url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;. Error: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in sensor subscribe for sensor: &quot;</span> <span class="o">+</span> <span class="n">sensor_id</span> <span class="o">+</span> <span class="s">&quot;.</span><span class="se">\n</span><span class="s"> Response Code: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Text: &quot;</span> <span class="o">+</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">encoding</span><span class="p">))</span>
+            </div>
+<div class="viewcode-block" id="WotkitProxy.unsubscribe_sensor"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.unsubscribe_sensor">[docs]</a>    <span class="k">def</span> <span class="nf">unsubscribe_sensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_id</span><span class="p">,</span> <span class="n">username</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Unsubscribe sensor for user.</span>
+
+<span class="sd">        :param sensor_id: Sensor ID to unsubscribe.</span>
+<span class="sd">        :type sensor_id: str.</span>
+<span class="sd">        :param username: If provided with password, overrides the default login credentials supplied on initialization.</span>
+<span class="sd">        :type username: str.</span>
+<span class="sd">        :param password: Used in combination with username.</span>
+<span class="sd">        :type password: str.</span>
+<span class="sd">        :raises: WotkitException if a status code is not 200&#39;s&quot;&quot;&quot;</span>
+        
+        <span class="n">sensor_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sensor_id</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&quot;/subscribe/&quot;</span> <span class="o">+</span> <span class="n">sensor_id</span>
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">auth</span> <span class="o">=</span> <span class="n">auth_credentials</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in sensor unsubscribe at url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;. Error: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in sensor unsubscribe for sensor: &quot;</span> <span class="o">+</span> <span class="n">sensor_id</span> <span class="o">+</span> <span class="s">&quot;.</span><span class="se">\n</span><span class="s"> Response Code: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Text: &quot;</span> <span class="o">+</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">encoding</span><span class="p">))</span>
+    </div>
+<div class="viewcode-block" id="WotkitProxy.get_sensor_fields"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.get_sensor_fields">[docs]</a>    <span class="k">def</span> <span class="nf">get_sensor_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_id</span><span class="p">,</span> <span class="n">field_name</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">username</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get sensor fields.</span>
+
+<span class="sd">        :param sensor_id: Sensor ID to get fields.</span>
+<span class="sd">        :type sensor_id: str.</span>
+<span class="sd">        :param field_name: If specified, only gets this field name.</span>
+<span class="sd">        :type field_name: str</span>
+<span class="sd">        :param username: If provided with password, overrides the default login credentials supplied on initialization.</span>
+<span class="sd">        :type username: str.</span>
+<span class="sd">        :param password: Used in combination with username.</span>
+<span class="sd">        :type password: str.</span>
+<span class="sd">        :raises: WotkitException if a status code is not 200&#39;s</span>
+<span class="sd">        :rtype: list of sensor fields, or dict of sensor field if field_name was specified&quot;&quot;&quot;</span>
+        
+        <span class="n">sensor_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sensor_id</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&quot;/sensors/&quot;</span> <span class="o">+</span> <span class="n">sensor_id</span> <span class="o">+</span> <span class="s">&quot;/fields&quot;</span>
+        <span class="k">if</span> <span class="n">field_name</span><span class="p">:</span>
+            <span class="n">url</span> <span class="o">+=</span> <span class="s">&quot;/&quot;</span> <span class="o">+</span> <span class="n">field_name</span>
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">auth</span> <span class="o">=</span> <span class="n">auth_credentials</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in getting sensor fields at url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;. Error: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_load_response_json</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in getting sensor fields for sensor: &quot;</span> <span class="o">+</span> <span class="n">sensor_id</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Code: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Text: &quot;</span> <span class="o">+</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">encoding</span><span class="p">))</span>
+    </div>
+<div class="viewcode-block" id="WotkitProxy.update_sensor_field"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.update_sensor_field">[docs]</a>    <span class="k">def</span> <span class="nf">update_sensor_field</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_id</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">field_data</span><span class="p">,</span> <span class="n">username</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update sensor field.</span>
+
+<span class="sd">        :param sensor_id: Sensor ID to update field.</span>
+<span class="sd">        :type sensor_id: str.</span>
+<span class="sd">        :param field_name: Updates this field name. If it doesn&#39;t exist, it creates a new field.</span>
+<span class="sd">        :type field_name: str</span>
+<span class="sd">        :param field_data: Field data. &quot;name&quot; and &quot;type&quot; are required &quot;name&quot; in an existing field cannot be updated. </span>
+<span class="sd">        :type field_data: dict </span>
+<span class="sd">        :param username: If provided with password, overrides the default login credentials supplied on initialization.</span>
+<span class="sd">        :type username: str.</span>
+<span class="sd">        :param password: Used in combination with username.</span>
+<span class="sd">        :type password: str.</span>
+<span class="sd">        :raises: WotkitException if a status code is not 200&#39;s&quot;&quot;&quot;</span>
+        
+        <span class="n">sensor_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sensor_id</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&quot;/sensors/&quot;</span> <span class="o">+</span> <span class="n">sensor_id</span> <span class="o">+</span> <span class="s">&quot;/fields/&quot;</span> <span class="o">+</span> <span class="n">field_name</span>
+
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        <span class="n">json_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">sensor_data</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">json_data</span><span class="p">,</span> <span class="n">auth</span> <span class="o">=</span> <span class="n">auth_credentials</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in updating sensor field at url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;. Error: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in updating sensor field at url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Code: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Text: &quot;</span> <span class="o">+</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">encoding</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="WotkitProxy.delete_sensor_field"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.delete_sensor_field">[docs]</a>    <span class="k">def</span> <span class="nf">delete_sensor_field</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_id</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">username</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Delete sensor field.</span>
+
+<span class="sd">        :param sensor_id: Sensor ID to delete field.</span>
+<span class="sd">        :type sensor_id: str.</span>
+<span class="sd">        :param field_name: Delete this field name. None of the default fields can be deleted (lat, lng, value, message).</span>
+<span class="sd">        :type field_name: str</span>
+
+<span class="sd">        :param username: If provided with password, overrides the default login credentials supplied on initialization.</span>
+<span class="sd">        :type username: str.</span>
+<span class="sd">        :param password: Used in combination with username.</span>
+<span class="sd">        :type password: str.</span>
+<span class="sd">        :raises: WotkitException if a status code is not 200&#39;s&quot;&quot;&quot;</span>
+        
+        <span class="n">sensor_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sensor_id</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&quot;/sensors/&quot;</span> <span class="o">+</span> <span class="n">sensor_id</span> <span class="o">+</span> <span class="s">&quot;/fields/&quot;</span> <span class="o">+</span> <span class="n">field_name</span>
+
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">auth</span> <span class="o">=</span> <span class="n">auth_credentials</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in deleting sensor field at url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;. Error: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in deleting sensor field at url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Code: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Text: &quot;</span> <span class="o">+</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">encoding</span><span class="p">))</span>
+      </div>
+<div class="viewcode-block" id="WotkitProxy.send_data_post_by_name"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.send_data_post_by_name">[docs]</a>    <span class="k">def</span> <span class="nf">send_data_post_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_name</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">username</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Wrapper around send_data_post that allows sending new data to a given sensor name .</span>
+<span class="sd">        </span>
+<span class="sd">        :param sensor_name: Sensor name to send data to (no username component prepended, ie. if the full name is admin.sensor_name, use sensor_name).</span>
+<span class="sd">        :type sensor_name: str.</span>
+<span class="sd">        :param data: Data to send to this sensor. </span>
+<span class="sd">        :type data: dict</span>
+<span class="sd">        :param username: If provided with password, overrides the default login credentials supplied on initialization.</span>
+<span class="sd">        :type username: str.</span>
+<span class="sd">        :param password: Used in combination with username.</span>
+<span class="sd">        :type password: str.</span>
+<span class="sd">        :raises: WotkitException if a status code is not 200&#39;s&quot;&quot;&quot;</span>
+
+        <span class="n">user</span><span class="p">,</span> <span class="n">pwd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">send_data_post</span><span class="p">(</span><span class="n">user</span> <span class="o">+</span> <span class="s">&quot;.&quot;</span> <span class="o">+</span> <span class="n">sensor_name</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">pwd</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="WotkitProxy.send_data_post"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.send_data_post">[docs]</a>    <span class="k">def</span> <span class="nf">send_data_post</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_id</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">username</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Send new data to a sensor.</span>
+<span class="sd">        </span>
+<span class="sd">        :param sensor_id: Sensor ID to send data to.</span>
+<span class="sd">        :type sensor_id: str.</span>
+<span class="sd">        :param data: Data to send to this sensor. </span>
+<span class="sd">        :type data: dict</span>
+<span class="sd">        :param username: If provided with password, overrides the default login credentials supplied on initialization.</span>
+<span class="sd">        :type username: str.</span>
+<span class="sd">        :param password: Used in combination with username.</span>
+<span class="sd">        :type password: str.</span>
+<span class="sd">        :raises: WotkitException if a status code is not 200&#39;s&quot;&quot;&quot;</span>
+        <span class="c">#use SenseTecnic</span>
+        <span class="c">#log.info(&quot;Sending data to wotkit for sensor &quot; + sensor + &quot;: &quot; + str(attributes))</span>
+        <span class="n">sensor_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sensor_id</span><span class="p">)</span>
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span><span class="o">+</span><span class="s">&#39;/sensors/&#39;</span><span class="o">+</span><span class="n">sensor_id</span><span class="o">+</span><span class="s">&#39;/data&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span> <span class="o">=</span> <span class="n">url</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="n">auth_credentials</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in sending new data by POST to sensor at url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;. Error: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Success sending POST sensor data to url: &quot;</span> <span class="o">+</span> <span class="n">url</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in sending new data by POST to sensor at url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Code: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Text: &quot;</span> <span class="o">+</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">encoding</span><span class="p">))</span>
+            
+</div>
+<div class="viewcode-block" id="WotkitProxy.send_bulk_data_put_by_name"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.send_bulk_data_put_by_name">[docs]</a>    <span class="k">def</span> <span class="nf">send_bulk_data_put_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_name</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">username</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Wrapper around send_bulk_data_put that allows sending new data to a given sensor name .</span>
+<span class="sd">        </span>
+<span class="sd">        :param sensor_name: Sensor name to send data to (no username component prepended, ie. if the full name is admin.sensor_name, use sensor_name).</span>
+<span class="sd">        :type sensor_name: str.</span>
+<span class="sd">        :param data: Data to send to this sensor. Compared with sending single new data by POST, each data item must contain a timestamp. The current timestamp can be obtained by calling get_wotkit_timestamp().</span>
+<span class="sd">        :type data: list of dict</span>
+<span class="sd">        :param username: If provided with password, overrides the default login credentials supplied on initialization.</span>
+<span class="sd">        :type username: str.</span>
+<span class="sd">        :param password: Used in combination with username.</span>
+<span class="sd">        :type password: str.</span>
+<span class="sd">        :raises: WotkitException if a status code is not 200&#39;s&quot;&quot;&quot;</span>
+        <span class="n">user</span><span class="p">,</span> <span class="n">pwd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_bulk_data_put</span><span class="p">(</span><span class="n">user</span> <span class="o">+</span> <span class="s">&quot;.&quot;</span> <span class="o">+</span> <span class="n">sensor_name</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">pwd</span><span class="p">)</span>
+        
+</div>
+<div class="viewcode-block" id="WotkitProxy.send_bulk_data_put"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.send_bulk_data_put">[docs]</a>    <span class="k">def</span> <span class="nf">send_bulk_data_put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_id</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">username</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Send multiple data dictionaries to WoTKit. </span>
+<span class="sd">        .. note:: data sent this way is not processed in real time. </span>
+<span class="sd">        </span>
+<span class="sd">        :param sensor_id: Sensor ID to send data to.</span>
+<span class="sd">        :type sensor_id: str.</span>
+<span class="sd">        :param data: Data to send to this sensor. Compared with sending single new data by POST, each data item must contain a timestamp. The current timestamp can be obtained by calling get_wotkit_timestamp().</span>
+<span class="sd">        :type data: list of dict</span>
+<span class="sd">        :param username: If provided with password, overrides the default login credentials supplied on initialization.</span>
+<span class="sd">        :type username: str.</span>
+<span class="sd">        :param password: Used in combination with username.</span>
+<span class="sd">        :type password: str.</span>
+<span class="sd">        :raises: WotkitException if a status code is not 200&#39;s&quot;&quot;&quot;</span>
+        <span class="n">sensor_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sensor_id</span><span class="p">)</span>
+        <span class="n">json_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span><span class="o">+</span><span class="s">&#39;/sensors/&#39;</span><span class="o">+</span><span class="n">sensor_id</span><span class="o">+</span><span class="s">&#39;/data&#39;</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">url</span> <span class="o">=</span> <span class="n">url</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="n">auth_credentials</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">json_data</span><span class="p">,</span> <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;content-type&quot;</span><span class="p">:</span> <span class="s">&quot;application/json&quot;</span><span class="p">})</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in sending bulk sensor data via PUT to url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;. Error: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Success sending bulk PUT data to sensor url: &quot;</span> <span class="o">+</span> <span class="n">url</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in sending bulk data by PUT to sensor at url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Code: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Text: &quot;</span> <span class="o">+</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">encoding</span><span class="p">))</span>
+    </div>
+<div class="viewcode-block" id="WotkitProxy.delete_data"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.delete_data">[docs]</a>    <span class="k">def</span> <span class="nf">delete_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_id</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">username</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="n">password</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Delete all data corresponding with timestamp.</span>
+<span class="sd">        :param sensor_id: Sensor ID to delete data from.</span>
+<span class="sd">        :type sensor_id: str.</span>
+<span class="sd">        :param timestamp: Timestamp in numeric UNIX timestamp or ISO form string.</span>
+<span class="sd">        :type timestamp: int or str</span>
+<span class="sd">        :param username: If provided with password, overrides the default login credentials supplied on initialization.</span>
+<span class="sd">        :type username: str.</span>
+<span class="sd">        :param password: Used in combination with username.</span>
+<span class="sd">        :type password: str.</span>
+<span class="sd">        :raises: WotkitException if a status code is not 200&#39;s&quot;&quot;&quot;</span>
+    
+        <span class="n">sensor_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sensor_id</span><span class="p">)</span>
+        
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span><span class="o">+</span><span class="s">&#39;/sensors/&#39;</span><span class="o">+</span><span class="n">sensor_id</span><span class="o">+</span><span class="s">&#39;/data/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">timestamp</span><span class="p">)</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">url</span> <span class="o">=</span> <span class="n">url</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="n">auth_credentials</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in deleting sensor data to url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;. Error: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Success deleting data to sensor url: &quot;</span> <span class="o">+</span> <span class="n">url</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in deleting sensor data at url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Code: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Text: &quot;</span> <span class="o">+</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">encoding</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="WotkitProxy.get_raw_data"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.get_raw_data">[docs]</a>    <span class="k">def</span> <span class="nf">get_raw_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get raw data from a WoTKit sensor.</span>
+<span class="sd">        </span>
+<span class="sd">        :param sensor_id: Sensor ID to get data from.</span>
+<span class="sd">        :type sensor_id: str.</span>
+<span class="sd">        </span>
+<span class="sd">        Kwargs:</span>
+<span class="sd">            :param start: the absolute start time of the range of data selected in milliseconds. (Defaults to current time.) May only be used in combination with another parameter.</span>
+<span class="sd">            :type start: int</span>
+<span class="sd">            :param end: the absolute end time of the range of data in milliseconds</span>
+<span class="sd">            :type end: int</span>
+<span class="sd">            :param after: the relative time after the start time, e.g. after=300000 would be 5 minutes after the start time (Start time MUST also be provided.)</span>
+<span class="sd">            :type after: int</span>
+<span class="sd">            :param afterE: the number of elements after the start element or time. (Start time MUST also be provided.)</span>
+<span class="sd">            :type afterE: int</span>
+<span class="sd">            :param before: the relative time before the start time. E.g. data from the last hour would be before=3600000 (If not provided, start time default to current time.)</span>
+<span class="sd">            :type before: int</span>
+<span class="sd">            :param beforeE: the number of elements before the start time. E.g. to get the last 1000, use beforeE=1000 (If not provided, start time default to current time.)</span>
+<span class="sd">            :type beforeE: int</span>
+<span class="sd">            :param reverse: true: order the data from newest to oldest; false (default):order from oldest to newest</span>
+<span class="sd">            :type reverse: bool</span>
+
+<span class="sd">            :param username: If provided with password, overrides the default login credentials supplied on initialization.</span>
+<span class="sd">            :type username: str.</span>
+<span class="sd">            :param password: Used in combination with username.</span>
+<span class="sd">            :type password: str.</span>
+<span class="sd">            </span>
+<span class="sd">        :raises: WotkitException if a status code is not 200&#39;s</span>
+<span class="sd">        :rtype: list of sensor data&quot;&quot;&quot;</span>
+        
+        <span class="n">sensor_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sensor_id</span><span class="p">)</span>
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+
+        <span class="n">valid_params</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s">&quot;start&quot;</span><span class="p">,</span> <span class="s">&quot;end&quot;</span><span class="p">,</span> <span class="s">&quot;after&quot;</span><span class="p">,</span> <span class="s">&quot;afterE&quot;</span><span class="p">,</span> <span class="s">&quot;before&quot;</span><span class="p">,</span> <span class="s">&quot;beforeE&quot;</span><span class="p">,</span> <span class="s">&quot;reverse&quot;</span><span class="p">])</span>
+        <span class="n">search_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">valid_params</span> <span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span><span class="o">+</span><span class="s">&#39;/sensors/&#39;</span><span class="o">+</span><span class="n">sensor_id</span><span class="o">+</span><span class="s">&#39;/data&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">auth</span> <span class="o">=</span> <span class="n">auth_credentials</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">search_params</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in getting raw data at url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;. Error: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_load_response_json</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in getting raw data at url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Code: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Text: &quot;</span> <span class="o">+</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">encoding</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="WotkitProxy.get_formatted_data"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.get_formatted_data">[docs]</a>    <span class="k">def</span> <span class="nf">get_formatted_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get formatted data from a WoTKit sensor suitable for Google Visualizations.</span>
+<span class="sd">        </span>
+<span class="sd">        :param sensor_id: Sensor ID to get data from.</span>
+<span class="sd">        :type sensor_id: str.</span>
+<span class="sd">        </span>
+<span class="sd">        Kwargs:</span>
+<span class="sd">            Same parameters as get_raw_data. Additionally:</span>
+<span class="sd">            :param tqx: A set of colon-delimited key/value pairs for standard parameters</span>
+<span class="sd">            :type tqx: str</span>
+<span class="sd">            :param tq: A SQL clause to select and process data fields to return</span>
+<span class="sd">            :type tq: str</span>
+<span class="sd">            </span>
+<span class="sd">        :raises: WotkitException if a status code is not 200&#39;s</span>
+<span class="sd">        :rtype: str that is javascript&quot;&quot;&quot;</span>
+        
+        <span class="n">sensor_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sensor_id</span><span class="p">)</span>
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+
+        <span class="n">valid_params</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s">&quot;start&quot;</span><span class="p">,</span> <span class="s">&quot;end&quot;</span><span class="p">,</span> <span class="s">&quot;after&quot;</span><span class="p">,</span> <span class="s">&quot;afterE&quot;</span><span class="p">,</span> <span class="s">&quot;before&quot;</span><span class="p">,</span> <span class="s">&quot;beforeE&quot;</span><span class="p">,</span> <span class="s">&quot;reverse&quot;</span><span class="p">,</span> <span class="s">&quot;tqx&quot;</span><span class="p">,</span> <span class="s">&quot;tq&quot;</span><span class="p">])</span>
+        <span class="n">search_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">valid_params</span> <span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span><span class="o">+</span><span class="s">&#39;/sensors/&#39;</span><span class="o">+</span><span class="n">sensor_id</span><span class="o">+</span><span class="s">&#39;/dataTable&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">auth</span> <span class="o">=</span> <span class="n">auth_credentials</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">search_params</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in getting formatted data at url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;. Error: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">encoding</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in getting formatted data at url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Code: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Text: &quot;</span> <span class="o">+</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">encoding</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="WotkitProxy.get_aggregated_data"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.get_aggregated_data">[docs]</a>    <span class="k">def</span> <span class="nf">get_aggregated_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get data from multiple sensors queried using the same parameters.</span>
+<span class="sd">        </span>
+<span class="sd">        Kwargs:</span>
+<span class="sd">            :param scope: &quot;all&quot;, &quot;subscribed&quot;, or &quot;contributed&quot;. &quot;all&quot; - all sensors the current user has access to. &quot;subscribed&quot; - the sensors the user has subscribed to. &quot;contributed&quot; - the sensors the user has contributed to the system.</span>
+<span class="sd">            :type scope: str.</span>
+<span class="sd">            :param tags: list of comma separated tags.</span>
+<span class="sd">            :type tags: str.</span>
+<span class="sd">            :param orgs: list of comma separated organization names.</span>
+<span class="sd">            :type orgs: str.</span>
+<span class="sd">            :param visibility: filter by the visibility of the sensors, either of &quot;public&quot;, &quot;organization&quot;, or &quot;private&quot;</span>
+<span class="sd">            :type visibility: str.</span>
+<span class="sd">            :param text: text to search for in the name, long name and description.</span>
+<span class="sd">            :type text: str.</span>
+<span class="sd">            :param active: when true, only returns sensors that have been updated in the last 15 minutes.</span>
+<span class="sd">            :type active: bool.</span>
+<span class="sd">            :param start: the absolute start time of the range of data selected in milliseconds. (Defaults to current time.) May only be used in combination with another parameter.</span>
+<span class="sd">            :type start: int</span>
+<span class="sd">            :param end: the absolute end time of the range of data in milliseconds</span>
+<span class="sd">            :type end: int</span>
+<span class="sd">            :param after: the relative time after the start time, e.g. after=300000 would be 5 minutes after the start time (Start time MUST also be provided.)</span>
+<span class="sd">            :type after: int</span>
+<span class="sd">            :param afterE: the number of elements after the start element or time. (Start time MUST also be provided.)</span>
+<span class="sd">            :type afterE: int</span>
+<span class="sd">            :param before: the relative time before the start time. E.g. data from the last hour would be before=3600000 (If not provided, start time default to current time.)</span>
+<span class="sd">            :type before: int</span>
+<span class="sd">            :param beforeE: the number of elements before the start time. E.g. to get the last 1000, use beforeE=1000 (If not provided, start time default to current time.)</span>
+<span class="sd">            :type beforeE: int</span>
+<span class="sd">            :param orderBy: &quot;sensor&quot; groups by sensor id or &quot;time&quot; orders by timestamp (default). </span>
+<span class="sd">            :type orderBy: str</span>
+<span class="sd">        :raises: WotkitException if a status code is not 200&#39;s</span>
+<span class="sd">        :rtype: list of sensor data&quot;&quot;&quot;</span>
+        
+            
+        <span class="n">valid_params</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s">&quot;start&quot;</span><span class="p">,</span> <span class="s">&quot;end&quot;</span><span class="p">,</span> <span class="s">&quot;after&quot;</span><span class="p">,</span> <span class="s">&quot;afterE&quot;</span><span class="p">,</span> <span class="s">&quot;before&quot;</span><span class="p">,</span> <span class="s">&quot;beforeE&quot;</span><span class="p">,</span> <span class="s">&quot;orderBy&quot;</span><span class="p">,</span> <span class="s">&quot;scope&quot;</span><span class="p">,</span> <span class="s">&quot;tags&quot;</span><span class="p">,</span> <span class="s">&quot;orgs&quot;</span><span class="p">,</span> <span class="s">&quot;visibility&quot;</span><span class="p">,</span> <span class="s">&quot;text&quot;</span><span class="p">,</span> <span class="s">&quot;active&quot;</span><span class="p">])</span>        
+        <span class="n">search_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">valid_params</span> <span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span><span class="o">+</span><span class="s">&#39;/data&#39;</span>
+
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+
+        <span class="n">valid_params</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s">&quot;start&quot;</span><span class="p">,</span> <span class="s">&quot;end&quot;</span><span class="p">,</span> <span class="s">&quot;after&quot;</span><span class="p">,</span> <span class="s">&quot;afterE&quot;</span><span class="p">,</span> <span class="s">&quot;before&quot;</span><span class="p">,</span> <span class="s">&quot;beforeE&quot;</span><span class="p">,</span> <span class="s">&quot;reverse&quot;</span><span class="p">])</span>
+        <span class="n">search_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">valid_params</span> <span class="p">])</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span><span class="o">+</span><span class="s">&#39;/sensors/&#39;</span><span class="o">+</span><span class="n">sensor_id</span><span class="o">+</span><span class="s">&#39;/data&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">auth</span> <span class="o">=</span> <span class="n">auth_credentials</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">search_params</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in getting aggregated data at url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;. Error: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_load_response_json</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="s">&quot;Error in getting aggregated data at url: &quot;</span> <span class="o">+</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Code: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s"> Response Text: &quot;</span> <span class="o">+</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">encoding</span><span class="p">))</span>
+</div>
+    <span class="sd">&quot;&quot;&quot; Admin functions &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="WotkitProxy.get_wotkit_user"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.get_wotkit_user">[docs]</a>    <span class="k">def</span> <span class="nf">get_wotkit_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_id</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get wotkit user with user_id. Requires admin credentials in WotkitConfig&#39;&#39;&#39;</span>
+        <span class="n">user_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&quot;/users/&quot;</span> <span class="o">+</span> <span class="n">user_id</span>
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">auth</span> <span class="o">=</span> <span class="n">auth_credentials</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Wotkit account username </span><span class="si">%s</span><span class="s"> not found.&quot;</span> <span class="o">%</span> <span class="n">user_id</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="WotkitProxy.create_wotkit_user"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.create_wotkit_user">[docs]</a>    <span class="k">def</span> <span class="nf">create_wotkit_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Creates user given in data dictionary. Requires admin credentials in WotkitConfig&#39;&#39;&#39;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&quot;/users&quot;</span>
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        <span class="n">json_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;content-type&quot;</span><span class="p">:</span> <span class="s">&quot;application/json&quot;</span><span class="p">}</span>
+        
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">auth</span> <span class="o">=</span> <span class="n">auth_credentials</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">json_data</span><span class="p">,</span> <span class="n">headers</span> <span class="o">=</span> <span class="n">headers</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Created wotkit account: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;Failed to create wotkit account: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;, code: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;message: &quot;</span> <span class="o">+</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">encoding</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="WotkitProxy.update_wotkit_user"><a class="viewcode-back" href="../index.html#wotkitpy.WotkitProxy.update_wotkit_user">[docs]</a>    <span class="k">def</span> <span class="nf">update_wotkit_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_id</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Updates user user_id with data dictionary. Requires admin credentials in WotkitConfig&#39;&#39;&#39;</span>
+        <span class="n">user_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&quot;/users/&quot;</span> <span class="o">+</span> <span class="n">user_id</span>
+        <span class="n">auth_credentials</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_login_credentials</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        <span class="n">json_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;content-type&quot;</span><span class="p">:</span> <span class="s">&quot;application/json&quot;</span><span class="p">}</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">auth</span> <span class="o">=</span> <span class="n">auth_credentials</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">json_data</span><span class="p">,</span> <span class="n">headers</span> <span class="o">=</span> <span class="n">headers</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Updated wotkit account: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Failed to update wotkit account: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;, code: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;, reason: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">WotkitException</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">wotkitpy 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Mark Duppenthaler.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>

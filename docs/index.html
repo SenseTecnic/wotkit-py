@@ -1,0 +1,807 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Welcome to wotkitpy’s documentation! &mdash; wotkitpy 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="wotkitpy 1.0 documentation" href="#" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="#">wotkitpy 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="welcome-to-wotkitpy-s-documentation">
+<h1>Welcome to wotkitpy&#8217;s documentation!<a class="headerlink" href="#welcome-to-wotkitpy-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>Contents: WoTKit API client written in Python.</p>
+<div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+<div class="section" id="module-wotkitpy">
+<span id="methods"></span><h1>Methods<a class="headerlink" href="#module-wotkitpy" title="Permalink to this headline">¶</a></h1>
+<p>A Python client for communicating to the WoTKit API using the requests library.</p>
+<span class="target" id="module-wotkitpy"></span><p>The MIT License (MIT)</p>
+<p>Copyright (c) 2013, Sensetecnic Systems.</p>
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &#8220;Software&#8221;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:</p>
+<p>The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.</p>
+<p>THE SOFTWARE IS PROVIDED &#8220;AS IS&#8221;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.</p>
+<dl class="class">
+<dt id="wotkitpy.WotkitProxy">
+<em class="property">class </em><tt class="descclassname">wotkitpy.</tt><tt class="descname">WotkitProxy</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Acts as a network proxy to the WotKit based on the configuration supplied.</p>
+<p>Example:
+wotkit_proxy = WotkitProxy( WOTKIT_URL_HERE, USERNAME, PASSWORD)
+wotkit_proxy.get_sensor_by_id(SENSOR_ID_HERE)</p>
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.create_wotkit_user">
+<tt class="descname">create_wotkit_user</tt><big>(</big><em>data</em>, <em>username=None</em>, <em>password=None</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.create_wotkit_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.create_wotkit_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates user given in data dictionary. Requires admin credentials in WotkitConfig</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.delete_data">
+<tt class="descname">delete_data</tt><big>(</big><em>sensor_id</em>, <em>timestamp</em>, <em>username=None</em>, <em>password=None</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.delete_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.delete_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete all data corresponding with timestamp.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sensor_id</strong> (<em>str.</em>) &#8211; Sensor ID to delete data from.</li>
+<li><strong>timestamp</strong> (<em>int or str</em>) &#8211; Timestamp in numeric UNIX timestamp or ISO form string.</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.delete_sensor">
+<tt class="descname">delete_sensor</tt><big>(</big><em>sensor_id</em>, <em>username=None</em>, <em>password=None</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.delete_sensor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.delete_sensor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete sensor from WoTKit.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sensor_id</strong> (<em>str.</em>) &#8211; Sensor ID to delete.</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last">WotkitException if a status code is not 204</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.delete_sensor_field">
+<tt class="descname">delete_sensor_field</tt><big>(</big><em>sensor_id</em>, <em>field_name</em>, <em>username=None</em>, <em>password=None</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.delete_sensor_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.delete_sensor_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete sensor field.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sensor_id</strong> (<em>str.</em>) &#8211; Sensor ID to delete field.</li>
+<li><strong>field_name</strong> (<em>str</em>) &#8211; Delete this field name. None of the default fields can be deleted (lat, lng, value, message).</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.get_aggregated_data">
+<tt class="descname">get_aggregated_data</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.get_aggregated_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.get_aggregated_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get data from multiple sensors queried using the same parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>scope</strong> (<em>str.</em>) &#8211; &#8220;all&#8221;, &#8220;subscribed&#8221;, or &#8220;contributed&#8221;. &#8220;all&#8221; - all sensors the current user has access to. &#8220;subscribed&#8221; - the sensors the user has subscribed to. &#8220;contributed&#8221; - the sensors the user has contributed to the system.</li>
+<li><strong>tags</strong> (<em>str.</em>) &#8211; list of comma separated tags.</li>
+<li><strong>orgs</strong> (<em>str.</em>) &#8211; list of comma separated organization names.</li>
+<li><strong>visibility</strong> (<em>str.</em>) &#8211; filter by the visibility of the sensors, either of &#8220;public&#8221;, &#8220;organization&#8221;, or &#8220;private&#8221;</li>
+<li><strong>text</strong> (<em>str.</em>) &#8211; text to search for in the name, long name and description.</li>
+<li><strong>active</strong> (<em>bool.</em>) &#8211; when true, only returns sensors that have been updated in the last 15 minutes.</li>
+<li><strong>start</strong> (<em>int</em>) &#8211; the absolute start time of the range of data selected in milliseconds. (Defaults to current time.) May only be used in combination with another parameter.</li>
+<li><strong>end</strong> (<em>int</em>) &#8211; the absolute end time of the range of data in milliseconds</li>
+<li><strong>after</strong> (<em>int</em>) &#8211; the relative time after the start time, e.g. after=300000 would be 5 minutes after the start time (Start time MUST also be provided.)</li>
+<li><strong>afterE</strong> (<em>int</em>) &#8211; the number of elements after the start element or time. (Start time MUST also be provided.)</li>
+<li><strong>before</strong> (<em>int</em>) &#8211; the relative time before the start time. E.g. data from the last hour would be before=3600000 (If not provided, start time default to current time.)</li>
+<li><strong>beforeE</strong> (<em>int</em>) &#8211; the number of elements before the start time. E.g. to get the last 1000, use beforeE=1000 (If not provided, start time default to current time.)</li>
+<li><strong>orderBy</strong> (<em>str</em>) &#8211; &#8220;sensor&#8221; groups by sensor id or &#8220;time&#8221; orders by timestamp (default).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list of sensor data</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.get_formatted_data">
+<tt class="descname">get_formatted_data</tt><big>(</big><em>sensor_id</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.get_formatted_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.get_formatted_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get formatted data from a WoTKit sensor suitable for Google Visualizations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sensor_id</strong> (<em>str.</em>) &#8211; Sensor ID to get data from.</td>
+</tr>
+</tbody>
+</table>
+<p>Same parameters as get_raw_data. Additionally:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>tqx</strong> (<em>str</em>) &#8211; A set of colon-delimited key/value pairs for standard parameters</li>
+<li><strong>tq</strong> (<em>str</em>) &#8211; A SQL clause to select and process data fields to return</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str that is javascript</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.get_raw_data">
+<tt class="descname">get_raw_data</tt><big>(</big><em>sensor_id</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.get_raw_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.get_raw_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get raw data from a WoTKit sensor.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sensor_id</strong> (<em>str.</em>) &#8211; Sensor ID to get data from.</li>
+<li><strong>start</strong> (<em>int</em>) &#8211; the absolute start time of the range of data selected in milliseconds. (Defaults to current time.) May only be used in combination with another parameter.</li>
+<li><strong>end</strong> (<em>int</em>) &#8211; the absolute end time of the range of data in milliseconds</li>
+<li><strong>after</strong> (<em>int</em>) &#8211; the relative time after the start time, e.g. after=300000 would be 5 minutes after the start time (Start time MUST also be provided.)</li>
+<li><strong>afterE</strong> (<em>int</em>) &#8211; the number of elements after the start element or time. (Start time MUST also be provided.)</li>
+<li><strong>before</strong> (<em>int</em>) &#8211; the relative time before the start time. E.g. data from the last hour would be before=3600000 (If not provided, start time default to current time.)</li>
+<li><strong>beforeE</strong> (<em>int</em>) &#8211; the number of elements before the start time. E.g. to get the last 1000, use beforeE=1000 (If not provided, start time default to current time.)</li>
+<li><strong>reverse</strong> (<em>bool</em>) &#8211; true: order the data from newest to oldest; false (default):order from oldest to newest</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list of sensor data</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.get_sensor_by_id">
+<tt class="descname">get_sensor_by_id</tt><big>(</big><em>sensor_id</em>, <em>username=None</em>, <em>password=None</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.get_sensor_by_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.get_sensor_by_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a sensor by ID.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sensor_id</strong> (<em>str.</em>) &#8211; Sensor ID to get.</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">dict representing sensor data, or None if sensor does not exist.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last">WotkitException if a status code is not 200 or 404</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.get_sensor_by_name">
+<tt class="descname">get_sensor_by_name</tt><big>(</big><em>sensor_name</em>, <em>username=None</em>, <em>password=None</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.get_sensor_by_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.get_sensor_by_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a sensor by name.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sensor_name</strong> (<em>str.</em>) &#8211; Sensor name to get (no username component prepended, ie. if the full name is admin.sensor_name, use sensor_name).</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">dict representing sensor data, or None if sensor does not exist.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last">WotkitException if a status code is not 200 or 404</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.get_sensor_fields">
+<tt class="descname">get_sensor_fields</tt><big>(</big><em>sensor_id</em>, <em>field_name=None</em>, <em>username=None</em>, <em>password=None</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.get_sensor_fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.get_sensor_fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get sensor fields.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sensor_id</strong> (<em>str.</em>) &#8211; Sensor ID to get fields.</li>
+<li><strong>field_name</strong> (<em>str</em>) &#8211; If specified, only gets this field name.</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list of sensor fields, or dict of sensor field if field_name was specified</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.get_sensor_subscriptions">
+<tt class="descname">get_sensor_subscriptions</tt><big>(</big><em>username=None</em>, <em>password=None</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.get_sensor_subscriptions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.get_sensor_subscriptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>View sensors that user is subscribed to.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list of sensors subscribed</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.get_wotkit_user">
+<tt class="descname">get_wotkit_user</tt><big>(</big><em>user_id</em>, <em>username=None</em>, <em>password=None</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.get_wotkit_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.get_wotkit_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get wotkit user with user_id. Requires admin credentials in WotkitConfig</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.query_actuator">
+<tt class="descname">query_actuator</tt><big>(</big><em>subscription_id</em>, <em>wait_time</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#wotkitpy.WotkitProxy.query_actuator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query actuator</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>subscription_id</strong> (<em>str.</em>) &#8211; Subscription ID for actuator</li>
+<li><strong>wait_time</strong> (<em>int</em>) &#8211; Seconds to wait for message, Max 20.</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict of control messages</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.query_all_sensors">
+<tt class="descname">query_all_sensors</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.query_all_sensors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.query_all_sensors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Searches all sensors that match the search query. A wrapper function on top of query_sensors that performs multiple API calls to retrieve all matches for search results more than 1000 sensors.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">When multiple API calls are made the search result could potentially be off sync with the WoTKit due to updates occuring to the sensors as the search is being performed.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>scope</strong> (<em>str.</em>) &#8211; &#8220;all&#8221;, &#8220;subscribed&#8221;, or &#8220;contributed&#8221;. &#8220;all&#8221; - all sensors the current user has access to. &#8220;subscribed&#8221; - the sensors the user has subscribed to. &#8220;contributed&#8221; - the sensors the user has contributed to the system.</li>
+<li><strong>tags</strong> (<em>str.</em>) &#8211; list of comma separated tags.</li>
+<li><strong>orgs</strong> (<em>str.</em>) &#8211; list of comma separated organization names.</li>
+<li><strong>visibility</strong> (<em>str.</em>) &#8211; filter by the visibility of the sensors, either of &#8220;public&#8221;, &#8220;organization&#8221;, or &#8220;private&#8221;</li>
+<li><strong>text</strong> (<em>str.</em>) &#8211; text to search for in the name, long name and description.</li>
+<li><strong>active</strong> (<em>bool.</em>) &#8211; when true, only returns sensors that have been updated in the last 15 minutes.</li>
+<li><strong>location</strong> (<em>str.</em>) &#8211; geo coordinates for a bounding box to search within. Format is yy.yyy,xx.xxx:yy.yyy,xx.xxx, and the order of the coordinates are North,West:South,East. Example: location=56.89,-114.55:17.43,-106.219.</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">list of dict&#8217;s containing each sensor&#8217;s data. Empty list of no matches.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.query_sensors">
+<tt class="descname">query_sensors</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.query_sensors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.query_sensors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Searches sensors that match the search query.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>scope</strong> (<em>str.</em>) &#8211; &#8220;all&#8221;, &#8220;subscribed&#8221;, or &#8220;contributed&#8221;. &#8220;all&#8221; - all sensors the current user has access to. &#8220;subscribed&#8221; - the sensors the user has subscribed to. &#8220;contributed&#8221; - the sensors the user has contributed to the system.</li>
+<li><strong>tags</strong> (<em>str.</em>) &#8211; list of comma separated tags.</li>
+<li><strong>orgs</strong> (<em>str.</em>) &#8211; list of comma separated organization names.</li>
+<li><strong>visibility</strong> (<em>str.</em>) &#8211; filter by the visibility of the sensors, either of &#8220;public&#8221;, &#8220;organization&#8221;, or &#8220;private&#8221;</li>
+<li><strong>text</strong> (<em>str.</em>) &#8211; text to search for in the name, long name and description.</li>
+<li><strong>active</strong> (<em>bool.</em>) &#8211; when true, only returns sensors that have been updated in the last 15 minutes.</li>
+<li><strong>location</strong> (<em>str.</em>) &#8211; geo coordinates for a bounding box to search within. Format is yy.yyy,xx.xxx:yy.yyy,xx.xxx, and the order of the coordinates are North,West:South,East. Example: location=56.89,-114.55:17.43,-106.219.</li>
+<li><strong>offset</strong> (<em>int.</em>) &#8211; offset into list of sensors for paging.</li>
+<li><strong>limit</strong> (<em>int.</em>) &#8211; limit to show for paging. The maximum number of sensors to display is 1000.</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.register_multiple_sensors">
+<tt class="descname">register_multiple_sensors</tt><big>(</big><em>registration_list</em>, <em>username=None</em>, <em>password=None</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.register_multiple_sensors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.register_multiple_sensors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Registers multiple new sensor to the WoTKit. If there are more than 100 sensor&#8217;s in registration_list, performs multiple bulk registration requests to the WoTKit.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>registration_list</strong> (<em>list of dict</em>) &#8211; A Python list that represents the JSON registration data. (ie. json.dumps(registration_dict) must not fail). For more detail look at register_sensor since the registration_list is just a list of single registration_dict&#8217;s.</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.register_sensor">
+<tt class="descname">register_sensor</tt><big>(</big><em>registration_dict</em>, <em>username=None</em>, <em>password=None</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.register_sensor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.register_sensor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Registers a new sensor to the WoTKit.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>registration_dict</strong> (<em>dict.</em>) &#8211; A Python dictionary that represents the JSON registration data. (ie. json.dumps(registration_dict) must not fail).  &#8220;name&#8221;, &#8220;longName&#8221;, and &#8220;description&#8221; are required. &#8220;longitude&#8221;, &#8220;latitude&#8221; are optional and will default to 0. &#8220;visibility&#8221; is optional and will default to &#8220;public&#8221;, if it is &#8220;organization&#8221; a valid &#8220;organization&#8221; must be supplied. &#8220;tags&#8221;, &#8220;fields&#8221;, &#8220;organization&#8221; are optional. The sensor name must be at least 4 characters long, contain only lowercase letters, numbers, dashes and underscores, and can start with a lowercase letter or an underscore only.</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.send_actuator_message">
+<tt class="descname">send_actuator_message</tt><big>(</big><em>sensor_id</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#wotkitpy.WotkitProxy.send_actuator_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send actuator message to a sensor.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sensor_id</strong> (<em>str.</em>) &#8211; Sensor ID</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.send_bulk_data_put">
+<tt class="descname">send_bulk_data_put</tt><big>(</big><em>sensor_id</em>, <em>data</em>, <em>username=None</em>, <em>password=None</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.send_bulk_data_put"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.send_bulk_data_put" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send multiple data dictionaries to WoTKit. 
+.. note:: data sent this way is not processed in real time.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sensor_id</strong> (<em>str.</em>) &#8211; Sensor ID to send data to.</li>
+<li><strong>data</strong> (<em>list of dict</em>) &#8211; Data to send to this sensor. Compared with sending single new data by POST, each data item must contain a timestamp. The current timestamp can be obtained by calling get_wotkit_timestamp().</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.send_bulk_data_put_by_name">
+<tt class="descname">send_bulk_data_put_by_name</tt><big>(</big><em>sensor_name</em>, <em>data</em>, <em>username=None</em>, <em>password=None</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.send_bulk_data_put_by_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.send_bulk_data_put_by_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper around send_bulk_data_put that allows sending new data to a given sensor name .</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sensor_name</strong> (<em>str.</em>) &#8211; Sensor name to send data to (no username component prepended, ie. if the full name is admin.sensor_name, use sensor_name).</li>
+<li><strong>data</strong> (<em>list of dict</em>) &#8211; Data to send to this sensor. Compared with sending single new data by POST, each data item must contain a timestamp. The current timestamp can be obtained by calling get_wotkit_timestamp().</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.send_data_post">
+<tt class="descname">send_data_post</tt><big>(</big><em>sensor_id</em>, <em>data</em>, <em>username=None</em>, <em>password=None</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.send_data_post"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.send_data_post" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send new data to a sensor.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sensor_id</strong> (<em>str.</em>) &#8211; Sensor ID to send data to.</li>
+<li><strong>data</strong> (<em>dict</em>) &#8211; Data to send to this sensor.</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.send_data_post_by_name">
+<tt class="descname">send_data_post_by_name</tt><big>(</big><em>sensor_name</em>, <em>data</em>, <em>username=None</em>, <em>password=None</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.send_data_post_by_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.send_data_post_by_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper around send_data_post that allows sending new data to a given sensor name .</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sensor_name</strong> (<em>str.</em>) &#8211; Sensor name to send data to (no username component prepended, ie. if the full name is admin.sensor_name, use sensor_name).</li>
+<li><strong>data</strong> (<em>dict</em>) &#8211; Data to send to this sensor.</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.subscribe_actuator">
+<tt class="descname">subscribe_actuator</tt><big>(</big><em>sensor_id</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#wotkitpy.WotkitProxy.subscribe_actuator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subscribe to actuator.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sensor_id</strong> (<em>str.</em>) &#8211; Sensor ID</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict containing subscription id</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.subscribe_sensor">
+<tt class="descname">subscribe_sensor</tt><big>(</big><em>sensor_id</em>, <em>username=None</em>, <em>password=None</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.subscribe_sensor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.subscribe_sensor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subscribe to sensor for user.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sensor_id</strong> (<em>str.</em>) &#8211; Sensor ID to subscribe.</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.unsubscribe_sensor">
+<tt class="descname">unsubscribe_sensor</tt><big>(</big><em>sensor_id</em>, <em>username=None</em>, <em>password=None</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.unsubscribe_sensor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.unsubscribe_sensor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unsubscribe sensor for user.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sensor_id</strong> (<em>str.</em>) &#8211; Sensor ID to unsubscribe.</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.update_sensor">
+<tt class="descname">update_sensor</tt><big>(</big><em>sensor_id</em>, <em>update_dict</em>, <em>username=None</em>, <em>password=None</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.update_sensor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.update_sensor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates a sensor on the WoTKit.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sensor_id</strong> (<em>str.</em>) &#8211; Sensor ID to update.</li>
+<li><strong>update_dict</strong> (<em>dict.</em>) &#8211; A Python dictionary that represents the JSON update data. (ie. json.dumps(update_dict) must not fail). Look at registration for more details. Updating a sensor is the same as registering a new sensor other than PUT is used and the sensor name or id is included in the URL.</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.update_sensor_field">
+<tt class="descname">update_sensor_field</tt><big>(</big><em>sensor_id</em>, <em>field_name</em>, <em>field_data</em>, <em>username=None</em>, <em>password=None</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.update_sensor_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.update_sensor_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update sensor field.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sensor_id</strong> (<em>str.</em>) &#8211; Sensor ID to update field.</li>
+<li><strong>field_name</strong> (<em>str</em>) &#8211; Updates this field name. If it doesn&#8217;t exist, it creates a new field.</li>
+<li><strong>field_data</strong> (<em>dict</em>) &#8211; Field data. &#8220;name&#8221; and &#8220;type&#8221; are required &#8220;name&#8221; in an existing field cannot be updated.</li>
+<li><strong>username</strong> (<em>str.</em>) &#8211; If provided with password, overrides the default login credentials supplied on initialization.</li>
+<li><strong>password</strong> (<em>str.</em>) &#8211; Used in combination with username.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last">WotkitException if a status code is not 200&#8217;s</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wotkitpy.WotkitProxy.update_wotkit_user">
+<tt class="descname">update_wotkit_user</tt><big>(</big><em>user_id</em>, <em>data</em>, <em>username=None</em>, <em>password=None</em><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#WotkitProxy.update_wotkit_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.WotkitProxy.update_wotkit_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates user user_id with data dictionary. Requires admin credentials in WotkitConfig</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="wotkitpy.get_wotkit_timestamp">
+<tt class="descclassname">wotkitpy.</tt><tt class="descname">get_wotkit_timestamp</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/wotkitpy.html#get_wotkit_timestamp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#wotkitpy.get_wotkit_timestamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the current timestamp in the ISO format WoTKit recognizes.
+:rtype: str.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Welcome to wotkitpy&#8217;s documentation!</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+<li><a class="reference internal" href="#module-wotkitpy">Methods</a></li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="#">wotkitpy 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Mark Duppenthaler.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>
