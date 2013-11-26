@@ -5,12 +5,12 @@ import wotkitpy
 import random
 import sys
 
-if len(sys.argv) != 3:
-    raise Exception("Need 3 arguments in order: api_url, username, and password");
+if len(sys.argv) != 4:
+    raise Exception("Invlid number of arguments. To call this script properlyuse following format:\n\n python test.py  api_url username password");
 
-api_url = sys.argv[0]
-username = sys.argv[1]
-password = sys.argv[2]    
+api_url = sys.argv[1]
+username = sys.argv[2]
+password = sys.argv[3]    
 
 proxy = wotkitpy.WotkitProxy(**{"api_url": api_url, "username": username, "password": password})
 sensor_name = "traffic-general"
@@ -135,7 +135,7 @@ test_sensor_registration = {
   "description": "Sensor data parsed from http://hatrafficinfo.dft.gov.uk/feeds/datex/England/CurrentPlanned/content.xml"
 }
 
-full_test_name = user + "." + test_name
+full_test_name = username + "." + test_name
 
 proxy.register_sensor(test_sensor_registration)
 

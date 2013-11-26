@@ -58,7 +58,11 @@ def _get_required_field(field, **kwargs):
 def get_wotkit_timestamp():
     """Returns the current timestamp in the ISO format WoTKit recognizes.
     :rtype: str. """
-    return datetime.utcnow().isoformat() + "Z"
+    dt = datetime.utcnow().isoformat()
+    if '.' not in dt:
+        dt = dt + '.000000'
+    
+    return dt + 'Z'
 
 def _load_response_json(response):
     """Load a the JSON response into Python format."""    
